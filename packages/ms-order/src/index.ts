@@ -9,6 +9,7 @@ import helmet from '@fastify/helmet'
 import * as path from 'path'
 import { PrismaClient } from '../node_modules/.prisma-ms-order/client'
 import { createKeyValueStore, loadDatabaseConfig } from '@ecommerce/shared-database'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import { seedOrdersIfEmpty } from './seedOrders'
 import { QueueManager, QUEUE_DEFINITIONS, redisEnabled, redisSettings } from './queues'
 import {
@@ -34,7 +35,7 @@ import { registerKafkaMetrics } from '@ecommerce/shared-messaging'
 import { eventProducer, kafkaAdminClient, kafkaSettings, stageOrderCancelled } from './events'
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.ORDER_SERVICE_PORT || '5465', 10)
+const PORT = parseInt(process.env.ORDER_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.order), 10)
 
 // Relative KV paths are written from the repo root, but this process runs in
 // packages/ms-order — without this, './data/rocksdb' would land in

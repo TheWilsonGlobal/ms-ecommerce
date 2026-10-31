@@ -9,6 +9,7 @@ import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { loadDatabaseConfig, runMigrations } from '@ecommerce/shared-database'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import {
   registerMetrics,
   buildLoggerOptions,
@@ -62,7 +63,7 @@ import { createRankRedis } from './rankings/redis'
  */
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.ANALYTICS_SERVICE_PORT || '5467', 10)
+const PORT = parseInt(process.env.ANALYTICS_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.analytics), 10)
 
 // Postgres is the only supported store: the transactional idempotency design
 // (one transaction per event) has no NeDB equivalent. Refuse to boot on a

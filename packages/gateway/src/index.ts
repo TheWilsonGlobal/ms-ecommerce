@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
 import { buildLoggerOptions, probeLokiReachable } from '@ecommerce/shared-utils'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import { buildGateway } from './app'
 import { redisFromEnv, resolveCorsOrigins } from './security'
 
@@ -15,7 +16,7 @@ let server: FastifyInstance
 // API_GATEWAY_PORT is the name .env documents; PORT / PORT_GATEWAY stay as the
 // older spellings so existing launch scripts keep working.
 const PORT = parseInt(
-  process.env.PORT || process.env.PORT_GATEWAY || process.env.API_GATEWAY_PORT || '5460',
+  process.env.PORT || process.env.PORT_GATEWAY || process.env.API_GATEWAY_PORT || String(SERVICE_PORT_DEFAULTS.gateway),
   10
 )
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://127.0.0.1:5463'

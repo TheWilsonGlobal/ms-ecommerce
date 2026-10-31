@@ -6,10 +6,24 @@ import {
   OUTBOX_DEFAULTS,
   RATE_LIMIT_DEFAULTS,
   REDIS_DB_DEFAULT,
+  SERVICE_PORT_DEFAULTS,
   STORAGE_DEFAULTS,
 } from '../index'
 
 describe('shared constants', () => {
+  it('service ports match the values in .env.example', () => {
+    expect(SERVICE_PORT_DEFAULTS).toEqual({
+      gateway: 5460,
+      admin: 5461,
+      client: 5462,
+      user: 5463,
+      product: 5464,
+      order: 5465,
+      inventory: 5466,
+      analytics: 5467,
+    })
+  })
+
   it('equal the values that used to live in .env / code literals', () => {
     expect(OUTBOX_DEFAULTS).toEqual({
       pollMs: 500,

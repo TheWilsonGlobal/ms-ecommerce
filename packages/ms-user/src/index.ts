@@ -8,6 +8,7 @@ import * as dotenv from 'dotenv'
 import * as path from 'path'
 import { PrismaClient } from '../node_modules/.prisma-ms-user/client'
 import { loadDatabaseConfig } from '@ecommerce/shared-database'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import {
   registerMetrics,
   buildLoggerOptions,
@@ -33,7 +34,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') })
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') })
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.USER_SERVICE_PORT || '5463', 10)
+const PORT = parseInt(process.env.USER_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.user), 10)
 
 const prisma = new PrismaClient()
 

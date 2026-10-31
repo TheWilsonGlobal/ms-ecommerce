@@ -1,3 +1,4 @@
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import { signServiceToken } from '@ecommerce/shared-security'
 
 /** What ms-order needs from a catalogue entry; everything else is ignored. */
@@ -119,6 +120,6 @@ export class ProductClient {
 export function createProductClientFromEnv(env: NodeJS.ProcessEnv = process.env): ProductClient {
   const baseUrl =
     env.PRODUCT_SERVICE_URL?.trim() ||
-    `http://127.0.0.1:${env.PRODUCT_SERVICE_PORT?.trim() || '5464'}`
+    `http://127.0.0.1:${env.PRODUCT_SERVICE_PORT?.trim() || String(SERVICE_PORT_DEFAULTS.product)}`
   return new ProductClient({ baseUrl, serviceSecret: env.SERVICE_AUTH_SECRET?.trim() || null })
 }

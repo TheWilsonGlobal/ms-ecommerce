@@ -7,6 +7,7 @@ import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import {
   loadDatabaseConfig,
   createRustFSClient,
@@ -54,7 +55,7 @@ const REPO_ROOT = path.resolve(__dirname, '../../../')
 dotenv.config({ path: path.join(REPO_ROOT, '.env') })
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.PRODUCT_SERVICE_PORT || '5464', 10)
+const PORT = parseInt(process.env.PRODUCT_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.product), 10)
 
 // Initialise the RustFS client (singleton per process)
 const rustfs = createRustFSClient(process.env)

@@ -9,6 +9,7 @@ import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { loadDatabaseConfig, runMigrations } from '@ecommerce/shared-database'
+import { SERVICE_PORT_DEFAULTS } from '@ecommerce/shared-constants'
 import {
   registerMetrics,
   buildLoggerOptions,
@@ -32,7 +33,7 @@ import {
 import { registerInventorySecurity } from './security'
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.INVENTORY_SERVICE_PORT || '5466', 10)
+const PORT = parseInt(process.env.INVENTORY_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.inventory), 10)
 
 // Postgres is the only supported store: the one-transaction-per-event design
 // (ledger + stock + reservation + outbox commit together) has no NeDB

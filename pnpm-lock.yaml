@@ -326,6 +326,9 @@ importers:
 
   packages/ms-analytics:
     dependencies:
+      '@ecommerce/shared-constants':
+        specifier: workspace:*
+        version: link:../shared/constants
       '@ecommerce/shared-database':
         specifier: workspace:*
         version: link:../shared/database
@@ -396,6 +399,9 @@ importers:
 
   packages/ms-inventory:
     dependencies:
+      '@ecommerce/shared-constants':
+        specifier: workspace:*
+        version: link:../shared/constants
       '@ecommerce/shared-database':
         specifier: workspace:*
         version: link:../shared/database
@@ -578,6 +584,9 @@ importers:
 
   packages/ms-product:
     dependencies:
+      '@ecommerce/shared-constants':
+        specifier: workspace:*
+        version: link:../shared/constants
       '@ecommerce/shared-database':
         specifier: workspace:*
         version: link:../shared/database
@@ -657,6 +666,9 @@ importers:
 
   packages/ms-user:
     dependencies:
+      '@ecommerce/shared-constants':
+        specifier: workspace:*
+        version: link:../shared/constants
       '@ecommerce/shared-database':
         specifier: workspace:*
         version: link:../shared/database

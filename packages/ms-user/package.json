@@ -19,6 +19,7 @@
     "auth:sync": "ts-node scripts/sync-auth-users.ts"
   },
   "dependencies": {
+    "@ecommerce/shared-constants": "workspace:*",
     "@ecommerce/shared-database": "workspace:*",
     "@ecommerce/shared-security": "workspace:*",
     "@ecommerce/shared-types": "workspace:*",
