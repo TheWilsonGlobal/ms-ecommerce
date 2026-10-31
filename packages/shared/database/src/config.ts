@@ -40,6 +40,7 @@ export interface DatabaseConfiguration {
       port: number
       password?: string | undefined
       db: number
+      tls?: boolean | undefined
     }
     rocksdb: {
       dataPath: string
@@ -145,6 +146,7 @@ export function loadDatabaseConfig(env: NodeJS.ProcessEnv = process.env): Databa
         port: parseInt(env.REDIS_PORT ?? '6379', 10),
         password: env.REDIS_PASSWORD ?? undefined,
         db: parseInt(env.REDIS_DB ?? String(REDIS_DB_DEFAULT), 10),
+        tls: env.REDIS_TLS === 'true',
       },
       rocksdb: {
         dataPath: env.ROCKSDB_DATA_PATH ?? './data/rocksdb',

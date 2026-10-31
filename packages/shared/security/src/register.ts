@@ -24,6 +24,7 @@ export interface RegisterSecurityOptions {
     port: number
     password?: string | undefined
     db?: number | undefined
+    tls?: boolean | undefined
   } | null
   /** Tests may inject a key set / store / config instead of the network ones. */
   overrides?: {
@@ -74,6 +75,7 @@ export async function registerSecurity(
       host: options.redis.host,
       port: options.redis.port,
       ...(options.redis.password ? { password: options.redis.password } : {}),
+      ...(options.redis.tls ? { tls: {} } : {}),
       db: options.redis.db ?? 0,
       lazyConnect: true,
       enableOfflineQueue: false,

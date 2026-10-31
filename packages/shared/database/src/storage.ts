@@ -212,6 +212,19 @@ export class RustFSStorageClient implements ObjectStorageClient {
  */
 export function createRustFSClient(env: NodeJS.ProcessEnv = process.env): RustFSStorageClient {
   const cfg = loadStorageConfig(env)
+  if (cfg.provider === 's3') {
+    // Any S3-API endpoint (Supabase Storage, AWS, R2). Same client, the cloud's settings.
+    if (!cfg.s3.endpoint) {
+      throw new Error('STORAGE_PROVIDER=s3 requires AWS_S3_ENDPOINT')
+    }
+    return new RustFSStorageClient(
+      cfg.s3.endpoint,
+      cfg.s3.bucket,
+      cfg.s3.accessKeyId,
+      cfg.s3.secretAccessKey,
+      cfg.s3.region
+    )
+  }
   return new RustFSStorageClient(
     cfg.rustfs.endpoint,
     cfg.rustfs.bucket,

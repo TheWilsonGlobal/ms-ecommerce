@@ -6,6 +6,7 @@ export interface RankRedisConfig {
   port: number
   password?: string | undefined
   db?: number | undefined
+  tls?: boolean | undefined
 }
 
 /**
@@ -19,6 +20,7 @@ export function createRankRedis(config: RankRedisConfig): RankRedis & { disconne
     host: config.host,
     port: config.port,
     ...(config.password ? { password: config.password } : {}),
+    ...(config.tls ? { tls: {} } : {}),
     db: config.db ?? 0,
     lazyConnect: true,
     enableOfflineQueue: false,

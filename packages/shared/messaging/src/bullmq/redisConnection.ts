@@ -27,6 +27,8 @@ export interface RedisKeyValueSettings {
   port: number
   password?: string | undefined
   db: number
+  /** REDIS_TLS=true: connect with TLS (Upstash and other hosted Redis require it). */
+  tls?: boolean | undefined
 }
 
 /**
@@ -60,7 +62,7 @@ export type RedisRole = 'queue' | 'worker' | 'scan'
  * the key at all when the value is truthy.
  */
 function baseOptions(settings: RedisKeyValueSettings): RedisOptions {
-  const { host, port, password, db } = settings
+  const { host, port, password, db, tls } = settings
 
   const options: RedisOptions = {
     host,
@@ -81,6 +83,11 @@ function baseOptions(settings: RedisKeyValueSettings): RedisOptions {
   // Only send AUTH when a non-empty password is configured. See note above.
   if (password) {
     options.password = password
+  }
+
+  // TLS for hosted Redis (REDIS_TLS=true). Plain connections are unchanged.
+  if (tls) {
+    options.tls = {}
   }
 
   return options
