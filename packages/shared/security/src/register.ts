@@ -81,10 +81,12 @@ export async function registerSecurity(
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       commandTimeout: 200,
-      connectTimeout: 1_000,
+      // A cross-region TLS handshake (Render to a managed Redis) can take well over 1 s.
+      connectTimeout: 5_000,
       retryStrategy: (n) => Math.min(n * 500, 5_000),
     })
-    redisClient.on('error', () => undefined) // surfaced through the limiter's own error path
+    // Logged here so an outage shows its cause. The limiter's own error path only says "unavailable".
+    redisClient.on('error', (err) => server.log.warn({ err }, 'rate_limit.redis_connection_error'))
     redisClient.connect().catch(() => undefined)
     store = new RedisRateStore(redisClient)
   } else {
