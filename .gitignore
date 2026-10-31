@@ -27,6 +27,8 @@ out/
 .env.cloud
 .env.render
 .env.shared
+.env.admin
+.env.client
 
 # =================================
 # IDE & Editor Files
