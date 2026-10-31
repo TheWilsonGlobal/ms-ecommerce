@@ -25,6 +25,7 @@ out/
 .env.test.local
 .env.production.local
 .env.cloud
+.env.render
 
 # =================================
 # IDE & Editor Files
