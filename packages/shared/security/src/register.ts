@@ -80,7 +80,8 @@ export async function registerSecurity(
       lazyConnect: true,
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
-      commandTimeout: 200,
+      // Cross-region round trips (Render Oregon to Upstash) can exceed 200 ms per command.
+      commandTimeout: 1_000,
       // A cross-region TLS handshake (Render to a managed Redis) can take well over 1 s.
       connectTimeout: 5_000,
       retryStrategy: (n) => Math.min(n * 500, 5_000),
