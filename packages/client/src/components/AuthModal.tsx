@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useAuth } from './authContext'
 
-type Mode = 'signin' | 'signup' | 'magic'
+type Mode = 'signin' | 'signup' | 'magic' | 'forgot'
 
 export const MIN_PASSWORD_LENGTH = 10
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -21,14 +21,22 @@ const inputClass =
   'w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'
 
 export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
-  const { signInWithPassword, signUp, sendMagicLink, configured } = useAuth()
+  const {
+    signInWithPassword,
+    signUp,
+    sendMagicLink,
+    sendPasswordReset,
+    updatePassword,
+    recovering,
+    configured,
+  } = useAuth()
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [touched, setTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState<'confirm' | 'link' | null>(null)
+  const [notice, setNotice] = useState<'confirm' | 'link' | 'reset' | null>(null)
 
   const dialogRef = useRef<HTMLDivElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
@@ -60,7 +68,7 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
 
   const emailValid = EMAIL_RE.test(email.trim())
   const passwordLongEnough = password.length >= MIN_PASSWORD_LENGTH
-  const needsPassword = mode !== 'magic'
+  const needsPassword = mode === 'signin' || mode === 'signup'
   const passwordOk = mode === 'signup' ? passwordLongEnough : password.length > 0
 
   const emailError = touched && !emailValid ? 'Enter a valid email address.' : ''
@@ -69,6 +77,10 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
       ? mode === 'signup'
         ? `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
         : 'Enter your password.'
+      : ''
+  const newPasswordError =
+    touched && !passwordLongEnough
+      ? `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
       : ''
 
   const switchMode = (next: Mode) => {
@@ -102,6 +114,21 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
     e.preventDefault()
     setTouched(true)
     setError('')
+
+    if (recovering) {
+      if (!passwordLongEnough) return
+      setSubmitting(true)
+      try {
+        const res = await updatePassword(password)
+        if (!res.ok) setError(res.error ?? 'Could not save the new password.')
+        // On success the provider closes the modal.
+      } finally {
+        setPassword('')
+        setSubmitting(false)
+      }
+      return
+    }
+
     if (!emailValid || (needsPassword && !passwordOk)) return
     setSubmitting(true)
     try {
@@ -114,6 +141,10 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
         const res = await signUp(addr, password)
         if (!res.ok) setError(res.error ?? 'Could not create the account.')
         else if (res.needsEmailConfirmation) setNotice('confirm')
+      } else if (mode === 'forgot') {
+        const res = await sendPasswordReset(addr)
+        if (!res.ok) setError(res.error ?? 'Could not send the reset link.')
+        else setNotice('reset')
       } else {
         const res = await sendMagicLink(addr)
         if (!res.ok) setError(res.error ?? 'Could not send the link.')
@@ -125,14 +156,17 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
     }
   }
 
-  const heading =
-    notice !== null
+  const heading = recovering
+    ? 'Choose a new password'
+    : notice !== null
       ? 'Check your email'
       : mode === 'signin'
         ? 'Sign in'
         : mode === 'signup'
           ? 'Create your account'
-          : 'Email me a sign-in link'
+          : mode === 'forgot'
+            ? 'Reset your password'
+            : 'Email me a sign-in link'
 
   const tabClass = (m: Mode) =>
     `px-3 py-1.5 rounded-lg text-xs font-bold ${
@@ -163,7 +197,9 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
         <h2 id={titleId} className="text-xl font-black text-slate-900 mb-1">
           {heading}
         </h2>
-        {reason && notice === null && <p className="text-xs text-slate-600 mb-3">{reason}</p>}
+        {reason && notice === null && !recovering && (
+          <p className="text-xs text-slate-600 mb-3">{reason}</p>
+        )}
 
         {!configured && (
           <p role="alert" className="text-xs text-rose-600 font-semibold mb-3">
@@ -171,16 +207,67 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
           </p>
         )}
 
-        {notice !== null ? (
+        {recovering ? (
+          <form onSubmit={onSubmit} noValidate className="space-y-4 text-xs mt-4">
+            <p className="text-sm text-slate-700">Enter a new password for your account.</p>
+            <div>
+              <label htmlFor={passwordId} className="font-bold text-slate-700 block mb-1">
+                New password
+              </label>
+              <input
+                id={passwordId}
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={newPasswordError ? true : undefined}
+                aria-describedby={hintId}
+                className={inputClass}
+              />
+              <p
+                id={hintId}
+                className={`text-[11px] mt-1 ${
+                  newPasswordError ? 'text-rose-600 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                {newPasswordError ||
+                  `At least ${MIN_PASSWORD_LENGTH} characters (${password.length}/${MIN_PASSWORD_LENGTH}).`}
+              </p>
+            </div>
+
+            <div aria-live="polite" aria-atomic="true">
+              {error && (
+                <p
+                  role="alert"
+                  className="text-[11px] text-rose-600 font-semibold bg-rose-50 border border-rose-200 rounded-lg p-2.5"
+                >
+                  {error}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting || !configured}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {submitting ? 'Please wait...' : 'Save new password'}
+            </button>
+          </form>
+        ) : notice !== null ? (
           <div className="space-y-4 text-sm text-slate-700" role="status">
             <p>
               {notice === 'confirm'
                 ? 'We sent a confirmation link to '
-                : 'We sent a sign-in link to '}
+                : notice === 'reset'
+                  ? 'We sent a password reset link to '
+                  : 'We sent a sign-in link to '}
               <b>{email.trim()}</b>.{' '}
               {notice === 'confirm'
                 ? 'Click it to activate your account, then come back and sign in.'
-                : 'Click it to sign in. Your cart is saved on this device.'}
+                : notice === 'reset'
+                  ? 'Click it to choose a new password.'
+                  : 'Click it to sign in. Your cart is saved on this device.'}
             </p>
             <button
               type="button"
@@ -192,32 +279,34 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
           </div>
         ) : (
           <>
-            <div className="flex gap-2 my-4" role="group" aria-label="Sign-in method">
-              <button
-                type="button"
-                className={tabClass('signin')}
-                aria-pressed={mode === 'signin'}
-                onClick={() => switchMode('signin')}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                className={tabClass('signup')}
-                aria-pressed={mode === 'signup'}
-                onClick={() => switchMode('signup')}
-              >
-                Sign up
-              </button>
-              <button
-                type="button"
-                className={tabClass('magic')}
-                aria-pressed={mode === 'magic'}
-                onClick={() => switchMode('magic')}
-              >
-                Magic link
-              </button>
-            </div>
+            {mode !== 'forgot' && (
+              <div className="flex gap-2 my-4" role="group" aria-label="Sign-in method">
+                <button
+                  type="button"
+                  className={tabClass('signin')}
+                  aria-pressed={mode === 'signin'}
+                  onClick={() => switchMode('signin')}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  className={tabClass('signup')}
+                  aria-pressed={mode === 'signup'}
+                  onClick={() => switchMode('signup')}
+                >
+                  Sign up
+                </button>
+                <button
+                  type="button"
+                  className={tabClass('magic')}
+                  aria-pressed={mode === 'magic'}
+                  onClick={() => switchMode('magic')}
+                >
+                  Magic link
+                </button>
+              </div>
+            )}
 
             <form onSubmit={onSubmit} noValidate className="space-y-4 text-xs">
               <div>
@@ -279,12 +368,27 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
                   {mode === 'signin' && passwordError && (
                     <p className="text-[11px] text-rose-600 font-semibold mt-1">{passwordError}</p>
                   )}
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => switchMode('forgot')}
+                      className="mt-1 text-[11px] font-semibold text-indigo-600 hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
               )}
 
               {mode === 'magic' && (
                 <p className="text-[11px] text-slate-500">
                   We will email you a one-time link. No password needed.
+                </p>
+              )}
+
+              {mode === 'forgot' && (
+                <p className="text-[11px] text-slate-500">
+                  We will email you a link to choose a new password.
                 </p>
               )}
 
@@ -310,9 +414,21 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
                     ? 'Sign in'
                     : mode === 'signup'
                       ? 'Create account'
-                      : 'Send magic link'}
+                      : mode === 'forgot'
+                        ? 'Send reset link'
+                        : 'Send magic link'}
               </button>
             </form>
+
+            {mode === 'forgot' && (
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                className="mt-3 text-[11px] font-semibold text-indigo-600 hover:underline"
+              >
+                Back to sign in
+              </button>
+            )}
           </>
         )}
       </div>

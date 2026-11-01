@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getBrowserSupabase } from '../lib/supabase/browser'
 import { hasOpsAccess } from '../lib/claims'
 import { onAuthRequired } from '../lib/authEvents'
+import { getMe } from '../lib/api'
 import AuthModal from './AuthModal'
 import {
   AuthContext,
@@ -20,11 +21,11 @@ function friendlyAuthError(err: {
   status?: number | undefined
   code?: string | undefined
 }): string {
-  if (
-    err.status === 429 ||
-    err.code === 'over_request_rate_limit' ||
-    err.code === 'over_email_send_rate_limit'
-  ) {
+  // The e-mail quota is per hour, not per minute: waiting a minute does not clear it.
+  if (err.code === 'over_email_send_rate_limit') {
+    return 'Too many sign-in emails were sent recently. Please try again in about an hour.'
+  }
+  if (err.status === 429 || err.code === 'over_request_rate_limit') {
     return 'Too many attempts. Please wait a minute and try again.'
   }
   switch (err.code) {
@@ -49,6 +50,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [isOps, setIsOps] = useState(false)
   const [loading, setLoading] = useState<boolean>(!!supabase)
   const [modalOpen, setModalOpen] = useState(false)
+  const [recovering, setRecovering] = useState(false)
   const [reason, setReason] = useState<string | undefined>()
   const resume = useRef<(() => void) | undefined>(undefined)
 
@@ -59,6 +61,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     setReason(undefined)
     if (cb) cb()
   }, [])
+
+  // The admin only lists accounts that have a user-service profile, and the profile is created on
+  // the first /api/v1/users/me call. Make that call for every signed-in account, including sessions
+  // restored on page load, so a shopper is listed without needing a checkout first.
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    void getMe().catch(() => undefined)
+  }, [userId])
 
   useEffect(() => {
     if (!supabase) return
@@ -76,6 +87,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setIsOps(hasOpsAccess(session?.access_token))
       setLoading(false)
       if (event === 'SIGNED_IN' && u) finishSignIn()
+      // The reset link signs the user in; show the new-password form before anything else.
+      if (event === 'PASSWORD_RECOVERY' && u) {
+        setRecovering(true)
+        setModalOpen(true)
+      }
     })
     return () => {
       active = false
@@ -144,6 +160,31 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     [supabase]
   )
 
+  const sendPasswordReset = useCallback(
+    async (email: string): Promise<AuthResult> => {
+      if (!supabase) return { ok: false, error: 'Sign-in is unavailable.' }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      })
+      if (error) return { ok: false, error: friendlyAuthError(error) }
+      return { ok: true, linkSent: true }
+    },
+    [supabase]
+  )
+
+  // Runs after the reset link signs the user in (PASSWORD_RECOVERY): sets the new password.
+  const updatePassword = useCallback(
+    async (password: string): Promise<AuthResult> => {
+      if (!supabase) return { ok: false, error: 'Sign-in is unavailable.' }
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) return { ok: false, error: friendlyAuthError(error) }
+      setRecovering(false)
+      setModalOpen(false)
+      return { ok: true }
+    },
+    [supabase]
+  )
+
   const signOut = useCallback(async () => {
     if (!supabase) return
     // Local cart state lives outside auth and is deliberately left alone.
@@ -158,11 +199,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       loading,
       user,
       isOps,
+      recovering,
       openAuthModal,
       closeAuthModal,
       signInWithPassword,
       signUp,
       sendMagicLink,
+      sendPasswordReset,
+      updatePassword,
       signOut,
     }),
     [
@@ -170,11 +214,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       loading,
       user,
       isOps,
+      recovering,
       openAuthModal,
       closeAuthModal,
       signInWithPassword,
       signUp,
       sendMagicLink,
+      sendPasswordReset,
+      updatePassword,
       signOut,
     ]
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Product, CartItem } from '../types'
 import { createOrder, ApiError, friendlyMessage, type ShippingInfo } from '../../lib/api'
 import { useAuth } from '../../components/AuthProvider'
@@ -32,14 +32,20 @@ export function useCheckout({
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false)
   const [checkoutStep, setCheckoutStep] = useState<'shipping' | 'payment' | 'confirmed'>('shipping')
   const [lastOrderId, setLastOrderId] = useState<string>('')
+  // The order is recorded against the signed-in account, so its e-mail must be that account's.
+  // The name is not on the auth user, so the shopper types it.
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
-    fullName: 'Alex Morgan',
-    email: 'customer@ecommerce.com',
+    fullName: '',
+    email: user?.email ?? '',
     addressLine1: '742 Evergreen Terrace',
     city: 'Springfield',
     state: 'OR',
     postalCode: '97477',
   })
+
+  useEffect(() => {
+    setShippingInfo((prev) => ({ ...prev, email: user?.email ?? '' }))
+  }, [user?.email])
   const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false)
   const [checkoutError, setCheckoutError] = useState<string>('')
 

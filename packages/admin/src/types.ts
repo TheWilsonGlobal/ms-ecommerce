@@ -5,6 +5,7 @@ export type Tab =
   | 'products'
   | 'orders'
   | 'users'
+  | 'roles'
   | 'task-queues'
   | 'events'
   | 'kv-keys'

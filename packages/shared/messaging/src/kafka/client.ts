@@ -1,5 +1,5 @@
 import { Kafka, logLevel as KafkaLogLevel, CompressionTypes, CompressionCodecs } from 'kafkajs'
-import type { KafkaConfig } from 'kafkajs'
+import type { KafkaConfig, SASLOptions } from 'kafkajs'
 import { describeError } from '../describeError'
 
 /**
@@ -66,13 +66,21 @@ CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec
  * retry forever against a broker that is deliberately not running.
  */
 
+export type KafkaSaslMechanism = 'plain' | 'scram-sha-256' | 'scram-sha-512'
+
 export interface KafkaSettings {
   enabled: boolean
   /** Seed broker list. Metadata may redirect to other addresses — see compose. */
   brokers: string[]
   /** Identifies this process in the broker's logs and in `rpk group describe`. */
   clientId: string
+  /** TLS to the broker. Redpanda Cloud requires it. */
+  tls: boolean
+  /** SASL credentials. Null when the broker does not require authentication. */
+  sasl: SASLOptions | null
 }
+
+const SASL_MECHANISMS: readonly KafkaSaslMechanism[] = ['plain', 'scram-sha-256', 'scram-sha-512']
 
 /** Ceiling on the reconnect backoff. Never gives up — see constraint 4. */
 const MAX_RETRY_TIME_MS = 30_000
@@ -93,10 +101,20 @@ export function loadKafkaSettings(clientId: string): KafkaSettings {
     .map((b) => b.trim())
     .filter((b) => b.length > 0)
 
+  const username = process.env.KAFKA_SASL_USER ?? ''
+  const password = process.env.KAFKA_SASL_PASSWORD ?? ''
+  const mechanism = (process.env.KAFKA_SASL_MECHANISM ?? 'scram-sha-256') as KafkaSaslMechanism
+  if (!SASL_MECHANISMS.includes(mechanism)) {
+    throw new Error(`KAFKA_SASL_MECHANISM must be one of ${SASL_MECHANISMS.join(', ')}`)
+  }
+
   return {
     enabled: process.env.KAFKA_ENABLED === 'true',
     brokers,
     clientId: process.env.KAFKA_CLIENT_ID ?? clientId,
+    tls: process.env.KAFKA_TLS === 'true',
+    // The mechanism is validated above; kafkajs's union cannot be narrowed from a string.
+    sasl: username && password ? ({ mechanism, username, password } as SASLOptions) : null,
   }
 }
 
@@ -112,6 +130,8 @@ export function createKafkaClient(settings: KafkaSettings, logPrefix: string): K
   const config: KafkaConfig = {
     clientId: settings.clientId,
     brokers: settings.brokers,
+    ssl: settings.tls,
+    ...(settings.sasl ? { sasl: settings.sasl } : {}),
     connectionTimeout: CONNECTION_TIMEOUT_MS,
     requestTimeout: REQUEST_TIMEOUT_MS,
     retry: {

@@ -24,11 +24,15 @@ export interface AuthContextValue {
   user: { id: string; email: string } | null
   /** ADMIN role (app_role claim) with aal2: may read /topology. UI hint only. */
   isOps: boolean
+  /** True after a password-reset link signed the user in; the modal must ask for a new password. */
+  recovering: boolean
   openAuthModal: (opts?: OpenAuthOptions) => void
   closeAuthModal: () => void
   signInWithPassword: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<AuthResult>
   sendMagicLink: (email: string) => Promise<AuthResult>
+  sendPasswordReset: (email: string) => Promise<AuthResult>
+  updatePassword: (password: string) => Promise<AuthResult>
   signOut: () => Promise<void>
 }
 
@@ -39,11 +43,14 @@ const defaultValue: AuthContextValue = {
   loading: false,
   user: null,
   isOps: false,
+  recovering: false,
   openAuthModal: () => undefined,
   closeAuthModal: () => undefined,
   signInWithPassword: noop,
   signUp: noop,
   sendMagicLink: noop,
+  sendPasswordReset: noop,
+  updatePassword: noop,
   signOut: async () => undefined,
 }
 

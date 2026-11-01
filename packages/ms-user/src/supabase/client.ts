@@ -88,6 +88,10 @@ export interface AdminUpdateUserInput {
 export interface AdminUserSummary {
   id: string
   email: string | null
+  /** app_metadata.app_role, when one was set (the role claim the API trusts). */
+  appRole: string | null
+  emailConfirmed: boolean
+  createdAt: string | null
 }
 
 export interface SupabaseAuth {
@@ -257,11 +261,19 @@ export function createSupabaseAuth(
       async listUsers(page, perPage) {
         const data = await call('admin', 'GET', `/admin/users?page=${page}&per_page=${perPage}`)
         if (!Array.isArray(data.users)) throw new SupabaseAuthError('unavailable')
-        return data.users.flatMap((u: unknown) =>
-          isObject(u) && typeof u.id === 'string'
-            ? [{ id: u.id, email: typeof u.email === 'string' ? u.email.toLowerCase() : null }]
-            : []
-        )
+        return data.users.flatMap((u: unknown) => {
+          if (!isObject(u) || typeof u.id !== 'string') return []
+          const meta = isObject(u.app_metadata) ? u.app_metadata : {}
+          return [
+            {
+              id: u.id,
+              email: typeof u.email === 'string' ? u.email.toLowerCase() : null,
+              appRole: typeof meta.app_role === 'string' ? meta.app_role : null,
+              emailConfirmed: typeof u.email_confirmed_at === 'string',
+              createdAt: typeof u.created_at === 'string' ? u.created_at : null,
+            },
+          ]
+        })
       },
     },
   }

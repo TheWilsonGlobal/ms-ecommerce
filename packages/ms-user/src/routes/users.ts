@@ -21,6 +21,7 @@ import {
 } from '../schemas'
 import { toPublicUser } from '../userMapping'
 import { writeAuditLog } from '../services/auditLog'
+import { authOnlyUser, isLinked, listAuthAccounts } from '../services/authOnlyAccounts'
 import { ensureProfile } from '../services/profiles'
 import { SupabaseAuthError, type SupabaseAuth } from '../supabase'
 
@@ -61,16 +62,17 @@ export function registerUserRoutes(server: FastifyInstance, { prisma, supabase }
     },
     async (request) => {
       const { page, limit } = request.query
-      const [users, total] = await Promise.all([
-        prisma.user.findMany({
-          include,
-          orderBy: { createdAt: 'asc' },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.user.count(),
+      // Profile rows plus Supabase accounts that have no profile yet, so every account is listed.
+      const [profiles, accounts] = await Promise.all([
+        prisma.user.findMany({ include, orderBy: { createdAt: 'asc' } }),
+        listAuthAccounts(supabase, request.log),
       ])
-      return { users: users.map(toPublicUser), total, page, limit }
+      const authOnly = accounts.filter((a) => !isLinked(a, profiles)).map(authOnlyUser)
+      const merged = [...profiles.map(toPublicUser), ...authOnly].sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt)
+      )
+      const start = (page - 1) * limit
+      return { users: merged.slice(start, start + limit), total: merged.length, page, limit }
     }
   )
 

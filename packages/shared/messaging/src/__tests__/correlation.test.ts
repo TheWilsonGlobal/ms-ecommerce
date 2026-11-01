@@ -10,7 +10,7 @@ import { makeEnvelope, parseEnvelope } from '../kafka/envelope'
 import { validatePayload } from '../kafka/payloadSchemas'
 import { CONSUMER_GROUPS, EVENT_TYPES, TOPICS } from '../kafka/topics'
 
-const DISABLED = { enabled: false, brokers: ['localhost:9100'], clientId: 'test' }
+const DISABLED = { enabled: false, brokers: ['localhost:9100'], clientId: 'test', tls: false, sasl: null }
 
 const wire = (over: Record<string, unknown> = {}) =>
   Buffer.from(

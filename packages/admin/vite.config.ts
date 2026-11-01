@@ -80,6 +80,8 @@ export default defineConfig(({ mode, command }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // Read the RBAC matrix from source: the package's CJS build is not safe to bundle here.
+        '@ecommerce/shared-types': path.resolve(__dirname, '../shared/types/src/index.ts'),
       },
     },
     server: {

@@ -16,7 +16,7 @@ import { CONSUMER_GROUPS, EVENT_TYPES, TOPICS, TOPIC_DEFINITIONS } from '../kafk
  * in CI with no infrastructure.
  */
 
-const DISABLED = { enabled: false, brokers: ['localhost:9100'], clientId: 'test' }
+const DISABLED = { enabled: false, brokers: ['localhost:9100'], clientId: 'test', tls: false, sasl: null }
 
 describe('envelope', () => {
   it('defaults correlationId to the eventId when no request context exists', () => {

@@ -8,6 +8,7 @@ const ADMIN_TABS: readonly Tab[] = [
   'products',
   'orders',
   'users',
+  'roles',
   'task-queues',
   'events',
   'kv-keys',

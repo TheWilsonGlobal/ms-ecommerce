@@ -10,6 +10,7 @@ import {
   ProductsIcon,
   OrdersIcon,
   UsersIcon,
+  RolesIcon,
   QueueIcon,
   EventsIcon,
   StorageIcon,
@@ -24,6 +25,7 @@ import Dashboard from './screens/Dashboard'
 import ProductsTab from './screens/ProductsTab'
 import OrdersTab from './screens/OrdersTab'
 import UsersTab from './screens/UsersTab'
+import RolesTab from './screens/RolesTab'
 import TaskQueuesTab from './screens/TaskQueuesTab'
 import EventsTab from './screens/EventsTab'
 import StorageTab from './screens/StorageTab'
@@ -88,7 +90,8 @@ export default function App() {
   ]
 
   const ACCESS: NavEntry[] = [
-    { key: 'users', label: 'Users & Roles', Icon: UsersIcon, count: data.users.length },
+    { key: 'users', label: 'Users', Icon: UsersIcon, count: data.users.length },
+    { key: 'roles', label: 'Roles', Icon: RolesIcon },
   ]
 
   const INFRA: NavEntry[] = [
@@ -286,6 +289,8 @@ export default function App() {
             onToggleStatus={data.handleToggleUserStatus}
           />
         )}
+
+        {activeTab === 'roles' && <RolesTab />}
 
         {activeTab === 'task-queues' && <TaskQueuesTab />}
 

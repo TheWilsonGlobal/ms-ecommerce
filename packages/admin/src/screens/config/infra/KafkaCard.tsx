@@ -3,7 +3,7 @@ import type { KafkaConfigResource } from '../../../hooks/useKafkaConfig'
 import { describeEventSourceError } from '../../../hooks/useEventData'
 import { ConfigCard, ReadOnlyRow, type OpenSignal } from '../parts'
 import { Toggle } from '../../../components/ui'
-import { KAFKA_BROKERS, REDPANDA_CONSOLE_URL } from '../../../data/serviceUrls'
+import { KAFKA_BROKERS } from '../../../data/serviceUrls'
 
 /**
  * The Kafka event-backbone group in Infra → Overview.
@@ -114,16 +114,15 @@ export function KafkaCard({
         </>
       }
       metrics={
-        <a
-          href={REDPANDA_CONSOLE_URL}
-          target="_blank"
-          rel="noreferrer"
+        <button
           className="btn btn-ghost btn-sm"
-          onClick={(e) => e.stopPropagation()}
-          title={`Open Redpanda Console at ${REDPANDA_CONSOLE_URL}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            resource.refetch()
+          }}
         >
-          Redpanda Console ↗
-        </a>
+          ↻ Probe
+        </button>
       }
     >
       {/* ── The toggle ──────────────────────────────────────────────────────
