@@ -96,12 +96,28 @@ describe('AuthModal', () => {
     const value = ctx()
     renderModal(value)
     await userEvent.click(screen.getByRole('button', { name: 'Sign up' }))
+    await userEvent.type(screen.getByLabelText('First name'), 'Son')
+    await userEvent.type(screen.getByLabelText('Last name'), 'Pham')
     await userEvent.type(screen.getByLabelText('Email'), 'a@b.co')
     await userEvent.type(screen.getByLabelText('Password'), 'longenough-pw1')
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
-    expect(value.signUp).toHaveBeenCalledWith('a@b.co', 'longenough-pw1')
+    expect(value.signUp).toHaveBeenCalledWith('a@b.co', 'longenough-pw1', {
+      firstName: 'Son',
+      lastName: 'Pham',
+    })
     expect(await screen.findByRole('dialog', { name: 'Check your email' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('a@b.co')
+  })
+
+  it('does not create an account until first and last name are entered', async () => {
+    const value = ctx()
+    renderModal(value)
+    await userEvent.click(screen.getByRole('button', { name: 'Sign up' }))
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.co')
+    await userEvent.type(screen.getByLabelText('Password'), 'longenough-pw1')
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(value.signUp).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter your first and last name.')
   })
 
   it('announces sign-in errors through an alert in a live region', async () => {

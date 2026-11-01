@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Product, CartItem } from '../types'
-import { createOrder, ApiError, friendlyMessage, type ShippingInfo } from '../../lib/api'
+import { createOrder, getMe, ApiError, friendlyMessage, type ShippingInfo } from '../../lib/api'
 import { useAuth } from '../../components/AuthProvider'
 
 interface UseCheckoutParams {
@@ -46,6 +46,23 @@ export function useCheckout({
   useEffect(() => {
     setShippingInfo((prev) => ({ ...prev, email: user?.email ?? '' }))
   }, [user?.email])
+
+  // Prefill Full Name from the account so checkout never submits it blank.
+  // Only fills an empty field: anything the shopper typed is kept.
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    void getMe()
+      .then((profile) => {
+        const fullName = [profile.firstName, profile.lastName]
+          .filter((part): part is string => typeof part === 'string' && part.trim() !== '')
+          .join(' ')
+          .trim()
+        if (!fullName) return
+        setShippingInfo((prev) => (prev.fullName ? prev : { ...prev, fullName }))
+      })
+      .catch(() => undefined)
+  }, [userId])
   const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false)
   const [checkoutError, setCheckoutError] = useState<string>('')
 
@@ -55,6 +72,11 @@ export function useCheckout({
 
   const handleCompleteOrder = async () => {
     setCheckoutError('')
+    // Caught here, before the request, so the shopper sees what to fix instead of the server's wording.
+    if (!shippingInfo.fullName.trim()) {
+      setCheckoutError('Enter your full name to place the order.')
+      return
+    }
     setIsSubmittingOrder(true)
     try {
       const order = await createOrder(cart, shippingInfo, {

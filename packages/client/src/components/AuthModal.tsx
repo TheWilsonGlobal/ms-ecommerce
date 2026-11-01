@@ -32,6 +32,8 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
   } = useAuth()
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [touched, setTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -47,6 +49,8 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
   const passwordId = `${uid}-password`
   const hintId = `${uid}-hint`
   const emailErrId = `${uid}-email-err`
+  const firstNameId = `${uid}-first-name`
+  const lastNameId = `${uid}-last-name`
 
   // Focus management: move focus in on open, restore on close.
   useEffect(() => {
@@ -130,6 +134,10 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
     }
 
     if (!emailValid || (needsPassword && !passwordOk)) return
+    if (mode === 'signup' && (!firstName.trim() || !lastName.trim())) {
+      setError('Enter your first and last name.')
+      return
+    }
     setSubmitting(true)
     try {
       const addr = email.trim()
@@ -138,7 +146,10 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
         if (!res.ok) setError(res.error ?? 'Could not sign in.')
         // On success the provider closes the modal and resumes checkout.
       } else if (mode === 'signup') {
-        const res = await signUp(addr, password)
+        const res = await signUp(addr, password, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        })
         if (!res.ok) setError(res.error ?? 'Could not create the account.')
         else if (res.needsEmailConfirmation) setNotice('confirm')
       } else if (mode === 'forgot') {
@@ -309,6 +320,37 @@ export default function AuthModal({ isOpen, reason, onClose }: AuthModalProps) {
             )}
 
             <form onSubmit={onSubmit} noValidate className="space-y-4 text-xs">
+              {mode === 'signup' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor={firstNameId} className="font-bold text-slate-700 block mb-1">
+                      First name
+                    </label>
+                    <input
+                      id={firstNameId}
+                      type="text"
+                      autoComplete="given-name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={lastNameId} className="font-bold text-slate-700 block mb-1">
+                      Last name
+                    </label>
+                    <input
+                      id={lastNameId}
+                      type="text"
+                      autoComplete="family-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label htmlFor={emailId} className="font-bold text-slate-700 block mb-1">
                   Email

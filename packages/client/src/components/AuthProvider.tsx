@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getBrowserSupabase } from '../lib/supabase/browser'
 import { hasOpsAccess } from '../lib/claims'
 import { onAuthRequired } from '../lib/authEvents'
-import { getMe } from '../lib/api'
+import { getMe, updateMyName } from '../lib/api'
 import AuthModal from './AuthModal'
 import {
   AuthContext,
@@ -67,8 +67,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   // restored on page load, so a shopper is listed without needing a checkout first.
   const userId = user?.id
   useEffect(() => {
-    if (!userId) return
-    void getMe().catch(() => undefined)
+    if (!userId || !supabase) return
+    // The names typed at sign-up live in Supabase user metadata. Copy them onto the profile
+    // once, when they differ, so the profile (and checkout) carries them.
+    void Promise.all([getMe(), supabase.auth.getUser()])
+      .then(async ([profile, { data }]) => {
+        const meta = data.user?.user_metadata ?? {}
+        const firstName = typeof meta.first_name === 'string' ? meta.first_name.trim() : ''
+        const lastName = typeof meta.last_name === 'string' ? meta.last_name.trim() : ''
+        if (!firstName || (profile.firstName === firstName && profile.lastName === lastName)) return
+        await updateMyName(profile.id, firstName, lastName)
+      })
+      .catch(() => undefined)
   }, [userId])
 
   useEffect(() => {
@@ -132,12 +142,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   )
 
   const signUp = useCallback(
-    async (email: string, password: string): Promise<AuthResult> => {
+    async (
+      email: string,
+      password: string,
+      names: { firstName: string; lastName: string }
+    ): Promise<AuthResult> => {
       if (!supabase) return { ok: false, error: 'Sign-in is unavailable.' }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { first_name: names.firstName, last_name: names.lastName },
+        },
       })
       if (error) return { ok: false, error: friendlyAuthError(error) }
       // The project requires e-mail confirmation: no session until the link is clicked.

@@ -29,7 +29,11 @@ export interface AuthContextValue {
   openAuthModal: (opts?: OpenAuthOptions) => void
   closeAuthModal: () => void
   signInWithPassword: (email: string, password: string) => Promise<AuthResult>
-  signUp: (email: string, password: string) => Promise<AuthResult>
+  signUp: (
+    email: string,
+    password: string,
+    names: { firstName: string; lastName: string }
+  ) => Promise<AuthResult>
   sendMagicLink: (email: string) => Promise<AuthResult>
   sendPasswordReset: (email: string) => Promise<AuthResult>
   updatePassword: (password: string) => Promise<AuthResult>

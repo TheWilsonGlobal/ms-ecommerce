@@ -274,12 +274,28 @@ export interface UserProfile {
   id: string
   email: string
   role: string
+  firstName?: string
+  lastName?: string
   [key: string]: unknown
 }
 
 /** The caller's profile (auto-provisioned by the backend on first call). */
 export function getMe(): Promise<UserProfile> {
   return apiFetch<UserProfile>('/api/v1/users/me', {
+    auth: 'required',
+    serviceName: 'User Service',
+  })
+}
+
+/** Saves first and last name on the caller's own profile (the route allows owners). */
+export function updateMyName(
+  userId: string,
+  firstName: string,
+  lastName: string
+): Promise<UserProfile> {
+  return apiFetch<UserProfile>(`/api/v1/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: { firstName, lastName },
     auth: 'required',
     serviceName: 'User Service',
   })
