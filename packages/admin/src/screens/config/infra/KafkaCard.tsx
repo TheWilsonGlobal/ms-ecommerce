@@ -3,7 +3,6 @@ import type { KafkaConfigResource } from '../../../hooks/useKafkaConfig'
 import { describeEventSourceError } from '../../../hooks/useEventData'
 import { ConfigCard, ReadOnlyRow, type OpenSignal } from '../parts'
 import { Toggle } from '../../../components/ui'
-import { KAFKA_BROKERS } from '../../../data/serviceUrls'
 
 /**
  * The Kafka event-backbone group in Infra → Overview.
@@ -97,7 +96,9 @@ export function KafkaCard({
   const runtimeEnabled = state === 'unknown' ? null : !resource.allDisabled
   const toggleValue = result ? result.enabled : (runtimeEnabled ?? false)
 
-  const brokerLabel = resource.brokers.length > 0 ? resource.brokers.join(', ') : KAFKA_BROKERS
+  // Empty until a service answers, like the KV card: the build-time fallback
+  // would show a broker no service has reported.
+  const brokerLabel = resource.brokers.length > 0 ? resource.brokers.join(', ') : UNMEASURED
   const failed = resource.sources.filter((s) => s.error !== null)
 
   return (
@@ -133,16 +134,24 @@ export function KafkaCard({
       <div className="config-row">
         <span className="k">Enabled</span>
         <span className="v" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Toggle
-            checked={toggleValue}
-            disabled={saving}
-            onChange={(next) => {
-              void config.setEnabled(next)
-            }}
-          />
-          <span className={toggleValue ? 'bool-true' : 'bool-false'}>
-            {toggleValue ? 'Enabled' : 'Disabled'}
-          </span>
+          {/* Before the first probe there is no state to show, so no switch either:
+              a switch here would read as "Disabled" when nothing has been measured. */}
+          {runtimeEnabled === null && !result ? (
+            <span style={{ color: 'var(--text-faint)' }}>{UNMEASURED}</span>
+          ) : (
+            <>
+              <Toggle
+                checked={toggleValue}
+                disabled={saving}
+                onChange={(next) => {
+                  void config.setEnabled(next)
+                }}
+              />
+              <span className={toggleValue ? 'bool-true' : 'bool-false'}>
+                {toggleValue ? 'Enabled' : 'Disabled'}
+              </span>
+            </>
+          )}
           <span className="mono" style={{ color: 'var(--text-faint)', fontSize: 12 }}>
             KAFKA_ENABLED
           </span>
