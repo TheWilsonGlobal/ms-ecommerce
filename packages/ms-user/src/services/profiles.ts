@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from '../../node_modules/.prisma-ms-user/client'
 import type { UserWithAddresses } from '../userMapping'
+import type { SupabaseAuth } from '../supabase/client'
 
 export interface ProvisionInput {
   /** Supabase auth.users id (the JWT `sub`). */
@@ -7,6 +8,25 @@ export interface ProvisionInput {
   email: string
   firstName?: string
   lastName?: string
+}
+
+/**
+ * Copies "e-mail confirmed" from Supabase onto an unverified profile. Only ever flips the
+ * flag to true, and only when Supabase has a confirmed address for the same auth user.
+ */
+export async function syncEmailVerified(
+  prisma: PrismaClient,
+  supabase: SupabaseAuth,
+  profile: UserWithAddresses
+): Promise<UserWithAddresses> {
+  if (profile.isEmailVerified || !profile.authUserId) return profile
+  const account = await supabase.admin.getUser(profile.authUserId)
+  if (!account?.emailConfirmed) return profile
+  return prisma.user.update({
+    where: { id: profile.id },
+    data: { isEmailVerified: true },
+    include: { addresses: true },
+  })
 }
 
 /** Local part of the address, cut to the column rules, as a placeholder first name. */

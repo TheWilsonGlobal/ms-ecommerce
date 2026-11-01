@@ -1,7 +1,8 @@
 ﻿'use client'
 
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { useAuth } from './AuthProvider'
+import AccountPanel from './AccountPanel'
 
 interface StorefrontHeaderProps {
   searchQuery: string
@@ -17,6 +18,8 @@ export default function StorefrontHeader({
   onOpenCart,
 }: StorefrontHeaderProps) {
   const { user, loading, configured, openAuthModal, signOut } = useAuth()
+  const [accountOpen, setAccountOpen] = useState(false)
+  const closeAccount = useCallback(() => setAccountOpen(false), [])
   return (
     <>
       {/* Top Banner */}
@@ -84,12 +87,19 @@ export default function StorefrontHeader({
 
             {user ? (
               <div className="flex items-center gap-2 text-xs">
-                <span
-                  className="hidden sm:inline max-w-[10rem] truncate font-semibold text-slate-700"
-                  title={user.email}
-                >
-                  {user.email}
-                </span>
+                <div className="relative hidden sm:block">
+                  <button
+                    type="button"
+                    onClick={() => setAccountOpen((open) => !open)}
+                    aria-haspopup="dialog"
+                    aria-expanded={accountOpen}
+                    title={user.email}
+                    className="max-w-[10rem] truncate font-semibold text-slate-700 hover:text-indigo-600 underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                  >
+                    {user.email}
+                  </button>
+                  {accountOpen && <AccountPanel onClose={closeAccount} />}
+                </div>
                 <button
                   type="button"
                   onClick={() => void signOut()}

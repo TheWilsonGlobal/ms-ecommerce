@@ -108,6 +108,8 @@ export interface SupabaseAuth {
     updateUser(id: string, input: AdminUpdateUserInput): Promise<void>
     deleteUser(id: string): Promise<void>
     listUsers(page: number, perPage: number): Promise<AdminUserSummary[]>
+    /** One account by its auth id; null when Supabase has no such user. */
+    getUser(id: string): Promise<AdminUserSummary | null>
   }
 }
 
@@ -262,20 +264,34 @@ export function createSupabaseAuth(
         const data = await call('admin', 'GET', `/admin/users?page=${page}&per_page=${perPage}`)
         if (!Array.isArray(data.users)) throw new SupabaseAuthError('unavailable')
         return data.users.flatMap((u: unknown) => {
-          if (!isObject(u) || typeof u.id !== 'string') return []
-          const meta = isObject(u.app_metadata) ? u.app_metadata : {}
-          return [
-            {
-              id: u.id,
-              email: typeof u.email === 'string' ? u.email.toLowerCase() : null,
-              appRole: typeof meta.app_role === 'string' ? meta.app_role : null,
-              emailConfirmed: typeof u.email_confirmed_at === 'string',
-              createdAt: typeof u.created_at === 'string' ? u.created_at : null,
-            },
-          ]
+          const summary = toAdminSummary(u)
+          return summary ? [summary] : []
         })
       },
+
+      async getUser(id) {
+        try {
+          const data = await call('admin', 'GET', adminPath(id))
+          return toAdminSummary(data)
+        } catch (err) {
+          if (err instanceof SupabaseAuthError && err.kind === 'not_found') return null
+          throw err
+        }
+      },
     },
+  }
+}
+
+/** One Admin API user object, or null when it has no usable id. */
+function toAdminSummary(u: unknown): AdminUserSummary | null {
+  if (!isObject(u) || typeof u.id !== 'string') return null
+  const meta = isObject(u.app_metadata) ? u.app_metadata : {}
+  return {
+    id: u.id,
+    email: typeof u.email === 'string' ? u.email.toLowerCase() : null,
+    appRole: typeof meta.app_role === 'string' ? meta.app_role : null,
+    emailConfirmed: typeof u.email_confirmed_at === 'string',
+    createdAt: typeof u.created_at === 'string' ? u.created_at : null,
   }
 }
 

@@ -22,7 +22,7 @@ import {
 import { toPublicUser } from '../userMapping'
 import { writeAuditLog } from '../services/auditLog'
 import { authOnlyUser, isLinked, listAuthAccounts } from '../services/authOnlyAccounts'
-import { ensureProfile } from '../services/profiles'
+import { ensureProfile, syncEmailVerified } from '../services/profiles'
 import { SupabaseAuthError, type SupabaseAuth } from '../supabase'
 
 export interface UserRouteDeps {
@@ -189,17 +189,23 @@ export function registerUserRoutes(server: FastifyInstance, { prisma, supabase }
       if (!auth.email) {
         throw new AppError(400, 'PROFILE_UNAVAILABLE', 'The token carries no e-mail address')
       }
-      const profile = await ensureProfile(prisma, {
+      const ensured = await ensureProfile(prisma, {
         authUserId: auth.userId,
         email: auth.email.trim().toLowerCase(),
       })
-      if (!profile) {
+      if (!ensured) {
         throw new AppError(
           409,
           'PROFILE_CONFLICT',
           'Your account could not be linked to a profile. Contact an administrator.'
         )
       }
+      // A shopper who confirms by e-mail and then signs in through supabase-js never passes
+      // through /auth/sessions, so the stored flag would stay false. Ask Supabase, which holds
+      // the truth. Best effort: a Supabase outage keeps the stored value rather than failing /me.
+      const profile = ensured.isEmailVerified
+        ? ensured
+        : await syncEmailVerified(prisma, supabase, ensured).catch(() => ensured)
       return toPublicUser(profile)
     }
   )
