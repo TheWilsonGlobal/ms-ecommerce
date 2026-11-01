@@ -32,14 +32,14 @@ export default defineConfig(({ mode, command }) => {
 
   // Injected into import.meta.env for src/data/serviceUrls.ts to read.
   Object.assign(process.env, {
-    VITE_GATEWAY_URL: origin('API_GATEWAY_PORT', '5460'),
-    VITE_ADMIN_URL: origin('ADMIN_PORT', '5461'),
-    VITE_CLIENT_URL: origin('CLIENT_PORT', '5462'),
-    VITE_USER_SERVICE_URL: origin('USER_SERVICE_PORT', '5463'),
-    VITE_PRODUCT_SERVICE_URL: origin('PRODUCT_SERVICE_PORT', '5464'),
-    VITE_ORDER_SERVICE_URL: origin('ORDER_SERVICE_PORT', '5465'),
-    VITE_INVENTORY_SERVICE_URL: origin('INVENTORY_SERVICE_PORT', '5466'),
-    VITE_ANALYTICS_SERVICE_URL: origin('ANALYTICS_SERVICE_PORT', '5467'),
+    VITE_GATEWAY_URL: env.VITE_GATEWAY_URL || origin('API_GATEWAY_PORT', '5460'),
+    VITE_ADMIN_URL: env.VITE_ADMIN_URL || origin('ADMIN_PORT', '5461'),
+    VITE_CLIENT_URL: env.VITE_CLIENT_URL || origin('CLIENT_PORT', '5462'),
+    VITE_USER_SERVICE_URL: env.VITE_USER_SERVICE_URL || origin('USER_SERVICE_PORT', '5463'),
+    VITE_PRODUCT_SERVICE_URL: env.VITE_PRODUCT_SERVICE_URL || origin('PRODUCT_SERVICE_PORT', '5464'),
+    VITE_ORDER_SERVICE_URL: env.VITE_ORDER_SERVICE_URL || origin('ORDER_SERVICE_PORT', '5465'),
+    VITE_INVENTORY_SERVICE_URL: env.VITE_INVENTORY_SERVICE_URL || origin('INVENTORY_SERVICE_PORT', '5466'),
+    VITE_ANALYTICS_SERVICE_URL: env.VITE_ANALYTICS_SERVICE_URL || origin('ANALYTICS_SERVICE_PORT', '5467'),
     // Kafka is optional and off by default; the admin reads this to render
     // "disabled" as a configured state rather than as an outage.
     VITE_KAFKA_ENABLED: String(env.KAFKA_ENABLED === 'true'),
