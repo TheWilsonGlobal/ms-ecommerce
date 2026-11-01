@@ -59,6 +59,11 @@ interface EventSourceMeta {
   authority: string
 }
 
+// The backbone services run on Render, where an idle instance sleeps and the first request
+// wakes it. Three probes wake together, so the shared 5s budget gives up on a healthy service
+// and reports it as unreachable. Give the event probe room to wait out the wake-up.
+const EVENT_PROBE_TIMEOUT_MS = 30_000
+
 const EVENT_SOURCES: readonly EventSourceMeta[] = [
   {
     service: 'ms-order',
@@ -200,7 +205,7 @@ export function useMergedEventData(): MergedEventResource {
     const results = await Promise.all(
       EVENT_SOURCES.map(async ({ service, role, url, authority }): Promise<EventSource> => {
         try {
-          const data = await fetchJson<EventData>(url)
+          const data = await fetchJson<EventData>(url, EVENT_PROBE_TIMEOUT_MS)
           return { service, role, authority, data, error: null }
         } catch (err) {
           return {

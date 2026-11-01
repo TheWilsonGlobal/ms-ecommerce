@@ -63,9 +63,9 @@ export interface LiveResource<T> {
  * Exported for useEventData.ts, which needs identical semantics against
  * /api/v1/events on three services.
  */
-export async function fetchJson<T>(url: string): Promise<T> {
+export async function fetchJson<T>(url: string, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   let res: Response
   try {
     res = await apiFetch(url, { signal: controller.signal })
@@ -75,7 +75,7 @@ export async function fetchJson<T>(url: string): Promise<T> {
     const failure: FetchError = {
       kind: 'network',
       message: aborted
-        ? `No response from ${url} within ${REQUEST_TIMEOUT_MS}ms.`
+        ? `No response from ${url} within ${timeoutMs}ms.`
         : `Could not reach ${url}: ${err instanceof Error ? err.message : String(err)}`,
     }
     throw failure
