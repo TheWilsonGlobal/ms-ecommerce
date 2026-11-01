@@ -29,6 +29,17 @@ const UNMEASURED = '—'
 
 type KafkaHeaderState = 'disabled' | 'online' | 'cold' | 'unreachable' | 'unknown'
 
+/**
+ * Whether a service is live on the backbone. A producer is live when it holds a broker
+ * connection. A consumer-only service never publishes, so its producer stays cold even while
+ * its consumer groups are running: a consumer is live when one of its groups is running.
+ */
+function isSourceLive(source: MergedEventResource['sources'][number]): boolean {
+  if (!source.data) return false
+  if (source.role === 'consumer') return source.data.consumers.some((c) => c.running)
+  return source.data.connected
+}
+
 function deriveState(resource: MergedEventResource): KafkaHeaderState {
   const answered = resource.sources.filter((s) => s.data !== null)
   // Nothing answered: we cannot claim disabled, online OR down.
@@ -220,7 +231,7 @@ export function KafkaCard({
                     ? 'chip-slate'
                     : !source.data.enabled
                       ? 'chip-slate'
-                      : source.data.connected
+                      : isSourceLive(source)
                         ? 'chip-green'
                         : 'chip-amber'
               }`}
@@ -231,7 +242,7 @@ export function KafkaCard({
                     ? `${source.service}: not loaded yet`
                     : !source.data.enabled
                       ? `${source.service}: Kafka disabled — configured, not faulty`
-                      : source.data.connected
+                      : isSourceLive(source)
                         ? `${source.service}: connected to ${source.data.brokers.join(', ')}`
                         : `${source.service}: enabled, no live producer connection yet`
               }
@@ -243,7 +254,7 @@ export function KafkaCard({
                   ? ' · unknown'
                   : !source.data.enabled
                     ? ' · disabled'
-                    : source.data.connected
+                    : isSourceLive(source)
                       ? ' · connected'
                       : ' · cold'}
             </span>
