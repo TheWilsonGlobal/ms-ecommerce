@@ -147,7 +147,7 @@ pnpm run stress:events        # Stress test Kafka outbox fan-out and consumer la
 | Ports, Caches, Search & Observability | [docs/infrastructure.md](docs/infrastructure.md) |
 | Deployment & CI/CD Pipelines | [docs/deployment.md](docs/deployment.md) |
 | Testing & Performance Benchmarks | [docs/testing.md](docs/testing.md) |
-| **Full Architecture Notes & Design Patterns** | [Architecture Notes](file:///C:/Git/.notes/JOBs/ms-ecommerce/architecture/README.md) |
+| **Full Architecture Notes & Design Patterns** | [Architecture Notes](docs/architecture.md) |
 
 ---
 
