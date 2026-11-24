@@ -33,7 +33,10 @@ import {
 import { registerInventorySecurity } from './security'
 
 const dbConfig = loadDatabaseConfig(process.env)
-const PORT = parseInt(process.env.INVENTORY_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.inventory), 10)
+const PORT = parseInt(
+  process.env.INVENTORY_SERVICE_PORT || String(SERVICE_PORT_DEFAULTS.inventory),
+  10
+)
 
 // Postgres is the only supported store: the one-transaction-per-event design
 // (ledger + stock + reservation + outbox commit together) has no NeDB

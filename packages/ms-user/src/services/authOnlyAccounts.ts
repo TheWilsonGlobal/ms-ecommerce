@@ -38,8 +38,7 @@ export function isLinked(
   profiles: readonly { authUserId: string | null; email: string }[]
 ): boolean {
   return profiles.some(
-    (p) =>
-      p.authUserId === account.id || (account.email !== null && p.email === account.email)
+    (p) => p.authUserId === account.id || (account.email !== null && p.email === account.email)
   )
 }
 

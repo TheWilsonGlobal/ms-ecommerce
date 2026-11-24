@@ -16,7 +16,10 @@ let server: FastifyInstance
 // API_GATEWAY_PORT is the name .env documents; PORT / PORT_GATEWAY stay as the
 // older spellings so existing launch scripts keep working.
 const PORT = parseInt(
-  process.env.PORT || process.env.PORT_GATEWAY || process.env.API_GATEWAY_PORT || String(SERVICE_PORT_DEFAULTS.gateway),
+  process.env.PORT ||
+    process.env.PORT_GATEWAY ||
+    process.env.API_GATEWAY_PORT ||
+    String(SERVICE_PORT_DEFAULTS.gateway),
   10
 )
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://127.0.0.1:5463'

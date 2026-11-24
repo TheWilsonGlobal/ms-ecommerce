@@ -269,7 +269,13 @@ export class ProductCache<T extends object> {
 
 /** Fail-fast ioredis client for the cache: commands reject at once while Redis is down. */
 export function createCacheRedis(
-  settings: { host: string; port: number; password?: string | undefined; db: number; tls?: boolean | undefined },
+  settings: {
+    host: string
+    port: number
+    password?: string | undefined
+    db: number
+    tls?: boolean | undefined
+  },
   log?: CacheLogger
 ): CacheRedis {
   const client = new IORedis({

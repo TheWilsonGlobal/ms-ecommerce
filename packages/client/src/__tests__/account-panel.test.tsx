@@ -62,7 +62,9 @@ describe('AccountPanel', () => {
   it('reports a failed load instead of showing stale fields', async () => {
     getMeMock.mockRejectedValue(new Error('down'))
     render(<AccountPanel onClose={jest.fn()} />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load your account details')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load your account details'
+    )
   })
 
   it('closes on Escape', async () => {
