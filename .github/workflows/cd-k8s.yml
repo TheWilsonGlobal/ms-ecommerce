@@ -19,7 +19,7 @@ on:
 jobs:
   deploy-staging:
     name: Deploy to Staging
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == 'staging' || github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
     environment: staging
 
@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Kubeconfig
-        shell: powershell
+        shell: pwsh
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING }}
         run: |
@@ -44,14 +44,14 @@ jobs:
           Set-Content -Path (Join-Path $kubeDir "config") -Value $decoded -Encoding utf8
 
       - name: Validate Manifests & Dry-Run
-        shell: powershell
+        shell: pwsh
         run: |
           kubectl kustomize packages/scripts/overlays/staging -o staging-manifests.yaml
           Get-Content staging-manifests.yaml -Head 40
           Remove-Item staging-manifests.yaml -Force
 
       - name: Apply Manifests to Cluster
-        shell: powershell
+        shell: pwsh
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING }}
         run: |
@@ -64,7 +64,7 @@ jobs:
 
   deploy-production:
     name: Deploy to Production
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == 'production' }}
     environment: production
 
@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Kubeconfig
-        shell: powershell
+        shell: pwsh
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PROD }}
         run: |
@@ -89,14 +89,14 @@ jobs:
           Set-Content -Path (Join-Path $kubeDir "config") -Value $decoded -Encoding utf8
 
       - name: Validate Manifests & Dry-Run
-        shell: powershell
+        shell: pwsh
         run: |
           kubectl kustomize packages/scripts/overlays/production -o prod-manifests.yaml
           Get-Content prod-manifests.yaml -Head 40
           Remove-Item prod-manifests.yaml -Force
 
       - name: Apply Manifests to Cluster
-        shell: powershell
+        shell: pwsh
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PROD }}
         run: |

@@ -46,6 +46,7 @@ make docker-up
 ### CI / CD
 
 - **CI Pipeline** (`.github/workflows/ci.yml`) runs lint, type-check and tests on every push and pull request.
+  All workflows run on GitHub-hosted runners (`ubuntu-latest`); no self-hosted runner is required.
 - **Build & Publish Containers** and **Deploy to Kubernetes** run only for a release tag (`v*.*.*`) or a manual run,
   not for ordinary commits.
 
